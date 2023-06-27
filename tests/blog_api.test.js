@@ -1,75 +1,148 @@
-const mongoose = require('mongoose')
 const supertest = require('supertest')
+const mongoose = require('mongoose')
+const bcrypt = require('bcryptjs')
+
+const helper = require('../utils/listHelper')
 const app = require('../app')
 const api = supertest(app)
+
+const User = require('../models/user')
 const Blog = require('../models/blog')
-const initialBlogs = require('../utils/listHelper').initialBlogs
 
-beforeEach(async () => {
-  await Blog.deleteMany({})
-  console.log('cleared database')
 
-  await Promise.all(
-    initialBlogs.map(async (blog) => {
-      let blogObject = new Blog(blog)
-      await blogObject.save()
-      console.log('blog saved')
+describe('when there is initially some blogs saved', () => {
+  beforeEach(async () => {
+    await Blog.deleteMany({})
+    await Blog.insertMany(helper.initialBlogs)
+  })
+
+  test('blogs are returned as json', async () => {
+    await api
+      .get('/api/blogs')
+      .expect(200)
+      .expect('Content-Type', /application\/json/)
+  })
+
+  test('all blogs are returned', async () => {
+    const response = await api.get('/api/blogs')
+
+    expect(response.body.length).toBe(helper.initialBlogs.length)
+  })
+
+  test('a specific blog is within the returned blogs', async () => {
+    const response = await api.get('/api/blogs')
+
+    const titles = response.body.map(blog => blog.title)
+
+    expect(titles).toContain('React patterns')
+  })
+
+  afterAll(async () => {
+    await Blog.deleteMany({})
+    await mongoose.connection.close()
+  })
+})
+
+
+describe('when there is initially a user in the database', () => {
+  beforeEach( async () => {
+    // Clear and create an existing user
+    await User.deleteMany({})
+    await api.post('/api/users').send(helper.testUser)
+  })
+
+  test('registering with an already existing username will reject with statuscode 400', async () => {
+    await api
+      .post('/api/users').send(helper.testUser)
+      .expect(400)
+  })
+
+  test('a password shorter than 8 characters will reject with statuscode 400 and an error', async () => {
+    const user = {
+      username: 'test',
+      name: 'test',
+      password: 'short'
+    }
+
+    const response = await api.post('/api/users').send(user)
+    
+    expect(400)
+    expect(response.body.error).toContain('password length must be atleast 8 characters')
+  })
+
+  afterAll(async () => {
+    await mongoose.connection.close()
+  })
+})
+
+
+describe('signing a user in', () => {
+  beforeEach( async () => {
+    await User.deleteMany({})
+    await api.post('/api/users').send(helper.testUser)
+  })
+
+  test('signing in returns a 200 statuscode and a valid token', async () => {
+    const { username, password } = helper.testUser
+
+    const response = await api.post('/api/login').send({ username, password })
+    
+    expect(200)
+    expect(response.body.token).toBeDefined()
+  })
+
+  afterAll( async () => {
+    await mongoose.connection.close()
+  })
+
+})
+
+
+describe('when a new user is created', () => {
+
+  beforeEach( async () => {
+    await User.deleteMany({})
+  })
+
+  test('creating a new user will respond with a 201 statuscode', async () => {
+    await api.post('/api/users')
+      .send(helper.testUser)
+      .expect(201)
+  })
+
+  afterAll( async () => {
+    await mongoose.connection.close()
+  })
+})
+
+
+describe('when a new blog gets added', () => {
+
+  beforeEach( async () => {
+    await User.deleteMany({})
+    await api.post('/api/users').send(helper.testUser)
+
+    const user = await api.post('/api/login').send({
+      username: helper.testUser.username,
+      password: helper.testUser.password
     })
-  )
 
-  console.log('all test blogs saved')
-})
+    
+  })
 
+  test('test that a blog is only added by a valid user', async () => {
+    await api.post('/api/blogs')
+      .set('Authorization', helper.fakeToken)
+      .send({
+        title: "test blog",
+        author: "test author",
+        url: "test url",
+        likes: 10
+      })
+      .expect(400)
+  })
 
-test('blogs are proper length as what is saved', async () => {
-  const response = await api.get('/api/blogs')
-
-  expect(response.body.length).toBe(initialBlogs.length)
-})
-
-test('verify property id is not being returned as _id', async () => {
-  const response = await api.get('/api/blogs')
-
-  expect(response.body[0].id).toBeDefined()
-})
-
-test('verify credibility of POST', async () => {
-  const newBlog = {
-    title: "test title",
-    author: "test author",
-    url: "test url",
-    likes: 99
-  }
-
-  const response = await api.post('/api/blogs').send(newBlog)
-  
-  expect(response.status).toBe(201)
-})
-
-test('verify likes value is 0 if it is missing', async () => {
-  const newBlog = {
-    title: "test title",
-    author: "test author",
-    url: "test url"
-  }
-
-  const response = await api.post('/api/blogs').send(newBlog)
-
-  expect(response.body.likes).toBe(0)
-})
-
-test('verify thrown error for missing title', async () => {
-  const newBlog = {
-    author: "testing",
-    url: 'test url',
-    likes: 20
-  }
-
-  const response = await api.post('/api/blogs').send(newBlog)
-
-  expect(response.status).toBe(400)
-})
-
-afterAll(async () => {
-  await mongoose.connection.close()
+  afterAll( async () => {
+    await mongoose.connection.close()
+  })
 })

@@ -17,18 +17,20 @@ const blogSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
-  userId: {
+  user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   }
 })
 
 blogSchema.set('toJSON', {
-  transform: (doc, returnedObj) => {
+  transform: (document, returnedObj) => {
     returnedObj.id = returnedObj._id.toString()
     delete returnedObj._id
-    delete returnedObj.__V
+    delete returnedObj.__v
   }
 })
 
-module.exports = mongoose.model('Blog', blogSchema) 
+const Blog = mongoose.model('Blog', blogSchema)
+
+module.exports = Blog
