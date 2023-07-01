@@ -5,6 +5,7 @@ require('express-async-errors')
 const User = require('../models/user')
 
 loginRouter.post('/', async (request, response) => {
+  console.log('------ in login route ------')
   const { username, password } = request.body
 
   // Searching for a matching username in DB

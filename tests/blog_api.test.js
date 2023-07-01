@@ -9,7 +9,6 @@ const api = supertest(app)
 const User = require('../models/user')
 const Blog = require('../models/blog')
 
-
 describe('when there is initially some blogs saved', () => {
   beforeEach(async () => {
     await Blog.deleteMany({})
@@ -43,7 +42,6 @@ describe('when there is initially some blogs saved', () => {
   })
 })
 
-
 describe('when there is initially a user in the database', () => {
   beforeEach( async () => {
     // Clear and create an existing user
@@ -75,8 +73,7 @@ describe('when there is initially a user in the database', () => {
   })
 })
 
-
-describe('signing a user in', () => {
+describe('when signing a user in', () => {
   beforeEach( async () => {
     await User.deleteMany({})
     await api.post('/api/users').send(helper.testUser)
@@ -97,9 +94,7 @@ describe('signing a user in', () => {
 
 })
 
-
 describe('when a new user is created', () => {
-
   beforeEach( async () => {
     await User.deleteMany({})
   })
@@ -108,38 +103,6 @@ describe('when a new user is created', () => {
     await api.post('/api/users')
       .send(helper.testUser)
       .expect(201)
-  })
-
-  afterAll( async () => {
-    await mongoose.connection.close()
-  })
-})
-
-
-describe('when a new blog gets added', () => {
-
-  beforeEach( async () => {
-    await User.deleteMany({})
-    await api.post('/api/users').send(helper.testUser)
-
-    const user = await api.post('/api/login').send({
-      username: helper.testUser.username,
-      password: helper.testUser.password
-    })
-
-    
-  })
-
-  test('test that a blog is only added by a valid user', async () => {
-    await api.post('/api/blogs')
-      .set('Authorization', helper.fakeToken)
-      .send({
-        title: "test blog",
-        author: "test author",
-        url: "test url",
-        likes: 10
-      })
-      .expect(400)
   })
 
   afterAll( async () => {

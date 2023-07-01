@@ -11,12 +11,12 @@ usersRouter.get('/', async (request, response, next) => {
 })
 
 // Route to create a new user in the DB
-usersRouter.post('/', async (request, response, next) => {
+usersRouter.post('/', async (request, response) => {
+  console.log('------ in user route -------')
   const { username, name, password } = request.body
 
   // Handle password length enforcement since we dont save raw passwords to DB
   if (password.length < 8) {
-    // return response.status(400).json({ error: 'password length must be atleast 8 characters' })
     throw Error('password length must be atleast 8 characters')
   }
 

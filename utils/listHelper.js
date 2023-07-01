@@ -52,6 +52,8 @@ const initialBlogs = [
   }  
 ]
 
+const invalidToken = 'Bearer yJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IktvZHliZWFybWNsIiwiaWQiOiI2NDliMjQyOWZhYjFkNDA5ZWM2NTA2MjIiLCJpYXQiOjE2ODc4ODg5NTh9.ygXs1KgJVXYFMeIeQ2trLavU3hiTGjT1RBuwdADvo6E'
+
 const testUser = {
   username: 'rootUsername',
   name: 'rootName',
@@ -79,5 +81,6 @@ module.exports = {
     testUser,
     totalLikes,
     blogsInDb,
-    usersInDb
+    usersInDb,
+    invalidToken
 }
